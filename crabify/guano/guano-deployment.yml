@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: guano
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: guano
+  template:
+    metadata:
+      labels:
+        app: guano
+    spec:
+      containers:
+      - name: guano
+        image: guano:latest
+        imagePullPolicy: IfNotPresent
+
