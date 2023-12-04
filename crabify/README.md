@@ -8,7 +8,7 @@ Go to the `postgres` folder and run:
 ```bash
 $ kubectl apply -f postgres-deployment.yml
 $ kubectl apply -f postgres-service.yml
-$ pod_id=$(kgp | grep postgres | awk '{ print $1 }'
+$ pod_id=$(kubectl get pods | grep postgres | awk '{ print $1 }')
 $ kubectl cp ./pgschema.sql $pod_id:var/lib/postgresql/data/pgschema.sql
 $ kubectl cp ./pgseed.sql $pod_id:var/lib/postgresql/data/pgseed.sql
 ```
@@ -35,4 +35,11 @@ Then deploy the pod:
 
 ```bash
 $ kubectl apply -f guano-deployment.yml
+```
+
+To see how the events are being generated:
+
+```
+$ pod_id=$(kubectl get pods | grep guano | awk '{ print $1 }')
+$ kubectl logs -f $pod_id
 ```

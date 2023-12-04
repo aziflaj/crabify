@@ -2,7 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"math/rand"
+	"os"
+	"os/signal"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -34,25 +39,46 @@ type Song struct {
 }
 
 var (
-	users   []User
-	artists []Artist
+	users      []User
+	artists    []Artist
+	eventTypes = []string{
+		"song_started_playing",
+		"song_paused",
+		"song_skipped",
+		"song_liked",
+		"song_disliked",
+		"artist_followed",
+		"artist_unfollowed",
+	}
 )
 
 func main() {
-	// Load data into memory
-	loadData()
+	loadData() // load data from pg
 
-	for _, user := range users {
-		log.Println(user.Username)
-	}
+	// listen for sigint
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
 
-	for _, artist := range artists {
-		log.Println(artist.Name)
-		for _, album := range artist.Albums {
-			log.Println(album.Title)
-			for _, song := range album.Songs {
-				log.Println(song.Title)
-			}
+	// limit to 10 concurrent goroutines
+	semaphore := make(chan bool, 10)
+
+EventGenerator:
+	for {
+		select {
+		case <-c:
+			fmt.Println("received ctrl+c")
+			break EventGenerator
+		default:
+			semaphore <- true
+
+			go func() {
+				defer func() {
+					time.Sleep(1 * time.Second)
+					<-semaphore
+				}()
+
+				generateUserEvents()
+			}()
 		}
 	}
 }
@@ -140,4 +166,15 @@ func loadData() {
 }
 
 func generateUserEvents() {
+	rUser := users[rand.Intn(len(users))]
+	rArtist := artists[rand.Intn(len(artists))]
+	rAlbum := rArtist.Albums[rand.Intn(len(rArtist.Albums))]
+	rSong := rAlbum.Songs[rand.Intn(len(rAlbum.Songs))]
+	rEventType := eventTypes[rand.Intn(len(eventTypes))]
+
+	// generate event
+	fmt.Printf(
+		"User: %s\nEvent: %s\nArtist: %s\nAlbum: %s\nSong: %s\n\n",
+		rUser.Username, rEventType, rArtist.Name, rAlbum.Title, rSong.Title,
+	)
 }
