@@ -37,12 +37,13 @@ $ kubectl cp ./pgschema.sql $pod_id:var/lib/postgresql/data/pgschema.sql
 $ kubectl cp ./pgseed.sql $pod_id:var/lib/postgresql/data/pgseed.sql
 ```
 
-Then SSH into the pod and seed it up:
+Then SSH into the pod and seed it up (also change WAL level, it's a surprise tool that will help us later):
 
 ```bash
 $ kubectl exec -it $pod_id -- /bin/bash
 #/ psql -U crabifyschrabify -d crabify -f var/lib/postgresql/data/pgschema.sql
 #/ psql -U crabifyschrabify -d crabify -f var/lib/postgresql/data/pgseed.sql
+#/ psql -U crabifyschrabify -d crabify -c "ALTER SYSTEM SET wal_level = logical"
 ```
 
 And voila, seeded db ready to use.
@@ -68,8 +69,99 @@ $ pod_id=$(kubectl get pods | grep guano | awk '{ print $1 }')
 $ kubectl logs -f $pod_id
 ```
 
-
 At this point you should be having:
 1. A Kafka service
 2. A PostgreSQL DB serving music-streaming related data
 3. A Go service simulating a music screaming backend, producing events both in DB (likes/dislikes, follows/unfollows) as well as in Kafka (song playing/skipped/paused)
+
+
+you can see events produced in kafka by running:
+
+```bash
+$ kubectl -n kafka run kafka-consumer -ti \
+    --image=quay.io/strimzi/kafka:0.38.0-kafka-3.6.0 \
+    --rm=true --restart=Never -- \
+    bin/kafka-console-consumer.sh \
+        --bootstrap-server kafka-service:9092 \
+        --topic song-events
+```
+
+## Setting up the CDC via Debezium
+
+Go to the `debezium` directory and do the following:
+
+```bash
+$ kubectl apply -f 00-pg-connector.yml
+$ kubectl apply -f 01-liked-songs.yml
+```
+
+Now, verify the Debezium connector is running as it should:
+
+```bash
+$ kubectl exec -it $(kgp | grep debezium-liked-songs | awk '{print $1}') -- curl http://localhost:8083/connectors
+```
+
+It should respond with an empty array. Now run:
+
+```bash
+$ kubectl exec -it $(kgp | grep debezium-liked-songs | awk '{print $1}') -- curl http://localhost:8083/connectors \
+  -H "Accept:application/json" \
+  -H "Content-Type:application/json" \
+  -d '{
+    "name": "pg-liked-songs",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "database.hostname": "postgres-service",
+        "database.port": "5432",
+        "database.user": "crabifyschrabify",
+        "database.password": "password",
+        "database.dbname": "crabify",
+        "database.server.name": "postgresql",
+        "plugin.name": "pgoutput",
+        "table.include.list": "public.liked_songs",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "topic.prefix": "cdc_events"
+    }
+}'
+```
+
+It should respond with the same thing. Now, to list all the present Kafka topics:
+
+```bash
+$ broker_pod=$(kubectl get pods -n kafka | grep broker | awk '{print $1}')
+$ kubectl -n kafka exec -it $(broker_pod) -- kafka-topics.sh --list --bootstrap-server kafka-service:9092
+```
+
+You should see `cdc_events.public.liked_songs` included in the output (the newly created topic) as well as `song-events` (the topic where `guano` is sending events).
+
+You can similarly create create CDCs for other tables like `disliked_songs`, `liked_albums` and `disliked_albums`.
+
+TODO: Continue with other tables
+
+## Deploying Cassandra sink
+
+go to `cassandra` folder and run
+
+```
+$ kubectl apply -f 00-cassandra-deployment.yml
+```
+wait for the pod to deploy and then do
+
+```
+$ kubectl exec -it <cassandra-pod-name> -- cqlsh
+```
+
+Now in the shell:
+
+```sql
+CREATE KEYSPACE IF NOT EXISTS song_events_ksp  WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+USE song_events_ksp;
+CREATE TABLE IF NOT EXISTS song_events (
+    event_id UUID PRIMARY KEY,
+    event_type TEXT,
+    song_title TEXT,
+    album_title TEXT,
+    artist_name TEXT
+);
+```
+
