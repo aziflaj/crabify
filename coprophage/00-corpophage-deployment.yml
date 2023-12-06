@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coprophage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coprophage
+  template:
+    metadata:
+      labels:
+        app: coprophage
+    spec:
+      containers:
+      - name: coprophage-song-events
+        image: coprophage:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_TOPIC
+          value: song-events
+
+
