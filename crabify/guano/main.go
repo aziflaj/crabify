@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -11,6 +13,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	kafka "github.com/segmentio/kafka-go"
 )
 
 type User struct {
@@ -41,11 +44,11 @@ type Song struct {
 }
 
 type Event struct {
-	UserID    int
-	ArtistID  int
-	AlbumID   int
-	SongID    int
-	EventType string
+	UserID    int    `json:"user_id"`
+	ArtistID  int    `json:"artist_id"`
+	AlbumID   int    `json:"album_id"`
+	SongID    int    `json:"song_id"`
+	EventType string `json:"event_type"`
 }
 
 var (
@@ -66,6 +69,14 @@ var (
 )
 
 func main() {
+	kafkaUrl := "kafka-service.kafka.svc.cluster.local:9092"
+	log.Printf("Connecting to kafka at %s", kafkaUrl)
+	kafkaConn, err := kafka.DialLeader(context.Background(), "tcp", kafkaUrl, "song-events", 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer kafkaConn.Close()
+
 	dbConnStr := "host=postgres-service port=5432 user=crabifyschrabify password=password dbname=crabify sslmode=disable"
 	db, err := sql.Open("postgres", dbConnStr)
 	if err != nil {
@@ -90,23 +101,30 @@ EventGenerator:
 			break EventGenerator
 		default:
 			semaphore <- true
-
-			go func() {
-				defer func() {
-					time.Sleep(1 * time.Second)
-					<-semaphore
-				}()
-
-				event := generateUserEvent()
-				if slices.Contains(dbEventTypes, event.EventType) {
-					publishDbEvent(db, event)
-				} else if slices.Contains(kafkaEventTypes, event.EventType) {
-					publishKafkaEvent()
-				} else {
-					log.Printf("[ERR] Invalid event type: %s", event.EventType)
-				}
-			}()
+			go generateAndPublishEvent(semaphore, db, kafkaConn)
 		}
+	}
+}
+
+func generateAndPublishEvent(semaphore <-chan bool, db *sql.DB, kafkaConn *kafka.Conn) {
+	defer func() {
+		time.Sleep(1 * time.Second)
+		<-semaphore
+	}()
+
+	event := generateUserEvent()
+
+	var publishErr error
+	if slices.Contains(dbEventTypes, event.EventType) {
+		publishErr = publishDbEvent(db, event)
+	} else if slices.Contains(kafkaEventTypes, event.EventType) {
+		publishErr = publishKafkaEvent(kafkaConn, event)
+	} else {
+		log.Printf("[ERR] Invalid event type: %s", event.EventType)
+	}
+
+	if publishErr != nil {
+		log.Printf("[ERR] %s", publishErr)
 	}
 }
 
@@ -207,7 +225,7 @@ func generateUserEvent() Event {
 	}
 }
 
-func publishDbEvent(db *sql.DB, event Event) {
+func publishDbEvent(db *sql.DB, event Event) error {
 	var q string
 	var err error
 
@@ -241,14 +259,21 @@ func publishDbEvent(db *sql.DB, event Event) {
 		)
 
 	default:
-		log.Printf("[ERR] Invalid event type: %s", event.EventType)
+		err = fmt.Errorf("Invalid event type: %s", event.EventType)
 	}
 
-	if err != nil {
-		log.Printf("[ERR] %s", err)
-	}
+	return err
 }
 
-func publishKafkaEvent() {
-	// TODO: implement
+func publishKafkaEvent(kafkaConn *kafka.Conn, event Event) error {
+	// jsonify the event
+	jsonEvent, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Publishing event: %s", jsonEvent)
+	_, err = kafkaConn.WriteMessages(kafka.Message{Value: []byte(jsonEvent)})
+
+	return err
 }
