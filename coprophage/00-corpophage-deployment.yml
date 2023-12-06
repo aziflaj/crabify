@@ -19,5 +19,4 @@ spec:
         env:
         - name: KAFKA_TOPIC
           value: song-events
-
-
+# TODO: Add consumers for the rest of the kafka topics

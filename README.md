@@ -129,7 +129,7 @@ It should respond with the same thing. Now, to list all the present Kafka topics
 
 ```bash
 $ broker_pod=$(kubectl get pods -n kafka | grep broker | awk '{print $1}')
-$ kubectl -n kafka exec -it $(broker_pod) -- kafka-topics.sh --list --bootstrap-server kafka-service:9092
+$ kubectl -n kafka exec -it $broker_pod -- kafka-topics.sh --list --bootstrap-server kafka-service:9092
 ```
 
 You should see `cdc_events.public.liked_songs` included in the output (the newly created topic) as well as `song-events` (the topic where `guano` is sending events).
@@ -165,3 +165,16 @@ CREATE TABLE IF NOT EXISTS song_events (
 );
 ```
 
+## Deploying the Python Consumer
+
+Kafka is being consumed by a handful of Python pods. Go to `coprophage` and do the following:
+
+```bash
+# build the docker image
+$ docker build -t coprophage:latest .
+
+# deploy coprophages
+$ kubectl apply -f 00-coprophage-deployment.yml
+```
+
+Now you have one consumer per each Kafka topic.
