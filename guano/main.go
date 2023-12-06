@@ -59,6 +59,8 @@ var (
 		"song_disliked",
 		"artist_followed",
 		"artist_unfollowed",
+		"album_liked",
+		"album_disliked",
 	}
 	kafkaEventTypes = []string{
 		"song_started_playing",
@@ -256,6 +258,20 @@ func publishDbEvent(db *sql.DB, event Event) error {
 		_, err = db.Exec(
 			q,
 			event.UserID, event.ArtistID,
+		)
+
+	case "album_liked":
+		q = "INSERT INTO liked_albums (user_id, album_id, like_timestamp) VALUES ($1, $2, $3)"
+		_, err = db.Exec(
+			q,
+			event.UserID, event.AlbumID, time.Now(),
+		)
+
+	case "album_disliked": // TODO: don't forget to handle this when streaming
+		q = "INSERT INTO disliked_albums (user_id, album_id, dislike_timestamp) VALUES ($1, $2, $3)"
+		_, err = db.Exec(
+			q,
+			event.UserID, event.AlbumID, time.Now(),
 		)
 
 	default:

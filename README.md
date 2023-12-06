@@ -120,7 +120,7 @@ $ kubectl exec -it $(kgp | grep debezium-connector | awk '{print $1}') -- curl h
         "database.dbname": "crabify",
         "database.server.name": "postgresql",
         "plugin.name": "pgoutput",
-        "table.include.list": "public.liked_songs,public.disliked_songs,public.artists_followed,public.liked_albums,public.dislied_albums",
+        "table.include.list": "public.liked_songs,public.disliked_songs,public.artists_followed,public.liked_albums,public.disliked_albums",
         "value.converter": "org.apache.kafka.connect.json.JsonConverter",
         "topic.prefix": "cdc_events"
     }
