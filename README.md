@@ -167,9 +167,14 @@ CREATE KEYSPACE IF NOT EXISTS song_events_ksp  WITH replication = {'class': 'Sim
 USE song_events_ksp;
 CREATE TABLE IF NOT EXISTS song_events (
     event_id UUID PRIMARY KEY,
+    user_id INT,
+    username TEXT,
     event_type TEXT,
+    song_id INT,
     song_title TEXT,
+    album_id INT,
     album_title TEXT,
+    artist_id INT,
     artist_name TEXT
 );
 ```
