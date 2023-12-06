@@ -1,7 +1,7 @@
 # Crabify
 -- _Because crappify is too obvious_
 
-## Deploying :skull: Kafka :skull:
+## Deploying Kafka
 
 Go to the `franz` folder and setup the Kafka broker:
 
@@ -44,6 +44,8 @@ $ kubectl exec -it $pod_id -- /bin/bash
 #/ psql -U crabifyschrabify -d crabify -f var/lib/postgresql/data/pgschema.sql
 #/ psql -U crabifyschrabify -d crabify -f var/lib/postgresql/data/pgseed.sql
 #/ psql -U crabifyschrabify -d crabify -c "ALTER SYSTEM SET wal_level = logical"
+# now log out of the postgres pod and restart it
+$ kubectl rollout restart deployment postgres-depl
 ```
 
 And voila, seeded db ready to use.
@@ -92,23 +94,23 @@ Go to the `debezium` directory and do the following:
 
 ```bash
 $ kubectl apply -f 00-pg-connector.yml
-$ kubectl apply -f 01-liked-songs.yml
+$ kubectl apply -f 01-cdc.yml
 ```
 
 Now, verify the Debezium connector is running as it should:
 
 ```bash
-$ kubectl exec -it $(kgp | grep debezium-liked-songs | awk '{print $1}') -- curl http://localhost:8083/connectors
+$ kubectl exec -it $(kubectl get pods | grep debezium-connector | awk '{print $1}') -- curl http://localhost:8083/connectors
 ```
 
 It should respond with an empty array. Now run:
 
 ```bash
-$ kubectl exec -it $(kgp | grep debezium-liked-songs | awk '{print $1}') -- curl http://localhost:8083/connectors \
+$ kubectl exec -it $(kgp | grep debezium-connector | awk '{print $1}') -- curl http://localhost:8083/connectors \
   -H "Accept:application/json" \
   -H "Content-Type:application/json" \
   -d '{
-    "name": "pg-liked-songs",
+    "name": "pg-cdc",
     "config": {
         "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
         "database.hostname": "postgres-service",
@@ -118,7 +120,7 @@ $ kubectl exec -it $(kgp | grep debezium-liked-songs | awk '{print $1}') -- curl
         "database.dbname": "crabify",
         "database.server.name": "postgresql",
         "plugin.name": "pgoutput",
-        "table.include.list": "public.liked_songs",
+        "table.include.list": "public.liked_songs,public.disliked_songs,public.artists_followed,public.liked_albums,public.dislied_albums",
         "value.converter": "org.apache.kafka.connect.json.JsonConverter",
         "topic.prefix": "cdc_events"
     }
@@ -132,11 +134,18 @@ $ broker_pod=$(kubectl get pods -n kafka | grep broker | awk '{print $1}')
 $ kubectl -n kafka exec -it $broker_pod -- kafka-topics.sh --list --bootstrap-server kafka-service:9092
 ```
 
-You should see `cdc_events.public.liked_songs` included in the output (the newly created topic) as well as `song-events` (the topic where `guano` is sending events).
+You should see something like this:
 
-You can similarly create create CDCs for other tables like `disliked_songs`, `liked_albums` and `disliked_albums`.
-
-TODO: Continue with other tables
+```
+__consumer_offsets
+cdc_events.public.artists_followed
+cdc_events.public.disliked_songs
+cdc_events.public.liked_songs
+dbz-cdc-config
+dbz-cdc-offset
+dbz-cdc-status
+song-events
+```
 
 ## Deploying Cassandra sink
 

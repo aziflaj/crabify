@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debezium-connector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: debezium-connector
+  template:
+    metadata:
+      labels:
+        app: debezium-connector
+    spec:
+      containers:
+        - name: debezium--connector
+          image: debezium/connect:latest
+          ports:
+          - containerPort: 8083
+          env:
+            - name: BOOTSTRAP_SERVERS
+              value: "kafka-service.kafka:9092"
+            - name: CONFIG_STORAGE_TOPIC
+              value: "dbz-cdc-config"
+            - name: OFFSET_STORAGE_TOPIC
+              value: "dbz-cdc-offset"
+            - name: STATUS_STORAGE_TOPIC
+              value: "dbz-cdc-status"
