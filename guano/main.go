@@ -49,6 +49,7 @@ type Event struct {
 	AlbumID   int    `json:"album_id"`
 	SongID    int    `json:"song_id"`
 	EventType string `json:"event_type"`
+	Duration  int    `json:"duration"`
 }
 
 var (
@@ -64,6 +65,7 @@ var (
 	}
 	kafkaEventTypes = []string{
 		"song_started_playing",
+		"song_finished_playing",
 		"song_paused",
 		"song_skipped",
 	}
@@ -211,6 +213,13 @@ func generateUserEvent() Event {
 	rAlbum := rArtist.Albums[rand.Intn(len(rArtist.Albums))]
 	rSong := rAlbum.Songs[rand.Intn(len(rAlbum.Songs))]
 	rEventType := eventTypes[rand.Intn(len(eventTypes))]
+	duration := 0
+
+	if rEventType == "song_paused" || rEventType == "song_skipped" {
+		duration = rand.Intn(rSong.Duration)
+	} else if rEventType == "song_finished_playing" {
+		duration = rSong.Duration
+	}
 
 	// generate event
 	fmt.Printf(
@@ -224,6 +233,7 @@ func generateUserEvent() Event {
 		AlbumID:   rAlbum.ID,
 		SongID:    rSong.ID,
 		EventType: rEventType,
+		Duration:  duration,
 	}
 }
 
