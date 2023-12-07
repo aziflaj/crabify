@@ -163,19 +163,31 @@ $ kubectl exec -it <cassandra-pod-name> -- cqlsh
 Now in the shell:
 
 ```sql
-CREATE KEYSPACE IF NOT EXISTS song_events_ksp  WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
-USE song_events_ksp;
+CREATE KEYSPACE IF NOT EXISTS crabify_analytics WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+USE crabify_analytics;
+
 CREATE TABLE IF NOT EXISTS song_events (
-    event_id UUID PRIMARY KEY,
+    event_type TEXT PRIMARY KEY,
     user_id INT,
     username TEXT,
-    event_type TEXT,
     song_id INT,
     song_title TEXT,
     album_id INT,
     album_title TEXT,
     artist_id INT,
-    artist_name TEXT
+    artist_name TEXT,
+    duration INT,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS playtime (
+    username TEXT,
+    song_id INT,
+    artist_id INT,
+    song_title TEXT,
+    artist_name TEXT,
+    duration INT,
+    PRIMARY KEY (username, song_id, artist_id)
 );
 ```
 

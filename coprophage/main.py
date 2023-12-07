@@ -18,7 +18,7 @@ pgConn = psycopg2.connect(
     port='5432',
 )
 
-cassandraConn = Cluster(['cassandra.default.svc.cluster.local']).connect('song_events_ksp')
+cassandraConn = Cluster(['cassandra.default.svc.cluster.local']).connect('crabify_analytics')
 
 # Much dynamic, very wow
 TOPIC_HANDLERS = {
