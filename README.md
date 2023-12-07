@@ -190,5 +190,4 @@ $ docker build -t coprophage:latest .
 # deploy coprophages
 $ kubectl apply -f 00-coprophage-deployment.yml
 ```
-
-Now you have one consumer per each Kafka topic.
+Now you have one consumer per each Kafka topic, storing events in Cassandra.

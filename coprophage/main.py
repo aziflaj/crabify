@@ -1,11 +1,21 @@
 import os
 from kafka import KafkaConsumer
+import psycopg2
+from cassandra.cluster import Cluster
+import json
 from song_events_handler import song_events_handler
-
 from cdc_disliked_songs import disliked_songs_handler
 
-# TODO: create source: connector to Pg
+pgConn = psycopg2.connect(
+    dbname='crabify',
+    user='crabifyschrabify',
+    password='password',
+    host='postgres-service',
+    port='5432',
+)
+
 # TODO: create sink: connector to Cassandra
+cassandraConn = Cluster(['cassandra']).connect('song_events_ksp')
 
 # Much dynamic, very wow
 TOPIC_HANDLERS = {
@@ -19,12 +29,16 @@ TOPIC_HANDLERS = {
 }
 
 
-def handle_message(event_type, message):
-    print("Received message from {}: {}".format(event_type, message))
-    # TODO: update handlers to be called like
-    # handler(source, sink, message)
 
-    TOPIC_HANDLERS[event_type](message.value.decode("utf-8"))
+def handle_message(event_type, message):
+    decoded_message = json.loads(message.value.decode("utf-8"))
+    TOPIC_HANDLERS[event_type](
+        pgConn,
+        cassandraConn,
+        decoded_message
+    )
+
+
 
 if __name__ == "__main__":
     print("Starting consumer...")
