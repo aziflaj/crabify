@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalogue
+  template:
+    metadata:
+      labels:
+        app: catalogue
+    spec:
+      containers:
+      - name: catalogue
+        image: catalogue:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 4567

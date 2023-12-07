@@ -194,4 +194,23 @@ $ kubectl apply -f 01-deployment.yml
 
 Now you have one consumer per each Kafka topic, storing events in Cassandra.
 
-## Running analytics on Cassandra
+## Analytics on Cassandra
+
+Go to `catalogue` and set up the service:
+
+```bash
+$ docker build -t catalogue:latest .
+$ kubectl apply -f 00-service.yml
+$ kubectl apply -f 01-deployment.yml
+
+# Find the correct service port
+$ kubectl get svc catalogue-service
+NAME                TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+catalogue-service   NodePort   10.103.250.110   <none>        4567:30355/TCP   5m24s
+```
+
+Read the `PORT(S)` and go to the mapped port, e.g. `http://localhost:30355`.
+
+1. dashboard
+2. k8s cronjob every 5m
+

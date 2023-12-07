@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogue-service
+spec:
+  type: NodePort
+  selector:
+    app: catalogue
+  ports:
+    - protocol: TCP
+      port: 4567
+      targetPort: 4567
+
