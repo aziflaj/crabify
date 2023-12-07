@@ -188,6 +188,10 @@ Kafka is being consumed by a handful of Python pods. Go to `coprophage` and do t
 $ docker build -t coprophage:latest .
 
 # deploy coprophages
-$ kubectl apply -f 00-coprophage-deployment.yml
+$ kubectl apply -f 00-namespace.yml
+$ kubectl apply -f 01-deployment.yml
 ```
+
 Now you have one consumer per each Kafka topic, storing events in Cassandra.
+
+## Running analytics on Cassandra

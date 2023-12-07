@@ -1,7 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: coprophage
+  name: copro-dislikes
+  namespace: coprophage
 spec:
   replicas: 1
   selector:
@@ -13,10 +14,9 @@ spec:
         app: coprophage
     spec:
       containers:
-      - name: coprophage-song-events
+      - name: coprophage-dislikes
         image: coprophage:latest
         imagePullPolicy: IfNotPresent
         env:
         - name: KAFKA_TOPIC
-          value: song-events
-# TODO: Add consumers for the rest of the kafka topics
+          value: cdc_events.public.disliked_songs

@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copro-song-events
+  namespace: coprophage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coprophage-song-events
+  template:
+    metadata:
+      labels:
+        app: coprophage-song-events
+    spec:
+      containers:
+      - name: coprophage-song-events
+        image: coprophage:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_TOPIC
+          value: song-events
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copro-song-dislikes
+  namespace: coprophage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coprophage-song-dislikes
+  template:
+    metadata:
+      labels:
+        app: coprophage-song-dislikes
+    spec:
+      containers:
+      - name: coprophage-song-dislikes
+        image: coprophage:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_TOPIC
+          value: cdc_events.public.disliked_songs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copro-song-likes
+  namespace: coprophage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coprophage-song-events
+  template:
+    metadata:
+      labels:
+        app: coprophage-song-likes
+    spec:
+      containers:
+      - name: coprophage-song-likes
+        image: coprophage:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_TOPIC
+          value: cdc_events.public.liked_songs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copro-artist-followed
+  namespace: coprophage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coprophage-artist-followed
+  template:
+    metadata:
+      labels:
+        app: coprophage-artist-followed
+    spec:
+      containers:
+      - name: coprophage-artist-followed
+        image: coprophage:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_TOPIC
+          value: cdc_events.public.artists_followed
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copro-liked-albums
+  namespace: coprophage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: coprophage-liked-albums
+  template:
+    metadata:
+      labels:
+        app: coprophage-liked-albums
+    spec:
+      containers:
+      - name: coprophage-liked-albums
+        image: coprophage:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: KAFKA_TOPIC
+          value: cdc_events.public.liked_albums

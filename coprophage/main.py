@@ -6,16 +6,19 @@ import json
 from song_events_handler import song_events_handler
 from cdc_disliked_songs import disliked_songs_handler
 
+topic = os.environ.get("KAFKA_TOPIC")
+event_type = topic.split(".")[-1]
+kafka_server = "kafka-service.kafka.svc.cluster.local:9092"
+
 pgConn = psycopg2.connect(
     dbname='crabify',
     user='crabifyschrabify',
     password='password',
-    host='postgres-service',
+    host='postgres-service.default.svc.cluster.local',
     port='5432',
 )
 
-# TODO: create sink: connector to Cassandra
-cassandraConn = Cluster(['cassandra']).connect('song_events_ksp')
+cassandraConn = Cluster(['cassandra.default.svc.cluster.local']).connect('song_events_ksp')
 
 # Much dynamic, very wow
 TOPIC_HANDLERS = {
@@ -31,6 +34,7 @@ TOPIC_HANDLERS = {
 
 
 def handle_message(event_type, message):
+    print(f"Handling {event_type} event")
     decoded_message = json.loads(message.value.decode("utf-8"))
     TOPIC_HANDLERS[event_type](
         pgConn,
@@ -41,16 +45,7 @@ def handle_message(event_type, message):
 
 
 if __name__ == "__main__":
-    print("Starting consumer...")
-
-    topic = os.environ.get("KAFKA_TOPIC")
-    event_type = topic.split(".")[-1]
-    kafka_server = "kafka-service.kafka.svc.cluster.local:9092"
-
-    print("Listening to topic: {}".format(topic))
-    print("Event type: {}".format(event_type))
-    print("Kafka server: {}".format(kafka_server))
-
+    print(f"Starting consumer for {event_type}")
     consumer = KafkaConsumer(
         topic,
         bootstrap_servers=[kafka_server],
