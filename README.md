@@ -1,5 +1,22 @@
 # Crabify
--- _Because crappify is too obvious_
+_- Because crapify is too obvious_
+
+> Disclaimer: The sole purpose of this repo is to be used in a **D**ata **E**ngineering and **A**rchitecture **D**emo - _DEAD_ - and should only be regarded as a Proof of Concept. The lack of replication here is on purpose, and the missing parts are left out as an exercise for the reader to add them.
+
+<details>
+<summary>Click here to see the Idealized System Design</summary>
+
+![](https://github.com/aziflaj/crabify/blob/main/docs/crabify-perfect.png?raw=true)
+
+</details>
+
+<details>
+<summary>Click here to see the Actual System Design</summary>
+
+![](https://github.com/aziflaj/crabify/blob/main/docs/crabify-actual.png?raw=true)
+
+</details>
+
 
 ## Deploying Kafka
 
