@@ -171,7 +171,7 @@ go to `cassandra` folder and run
 ```
 $ kubectl apply -f 00-cassandra-deployment.yml
 ```
-wait for the pod to deploy and then do
+wait for the pod to deploy and start (you might need to read the pod logs) and then do
 
 ```
 $ kubectl exec -it <cassandra-pod-name> -- cqlsh
@@ -198,13 +198,13 @@ CREATE TABLE IF NOT EXISTS song_events (
 );
 
 CREATE TABLE IF NOT EXISTS playtime (
+    artist_id INT,
     username TEXT,
     song_id INT,
-    artist_id INT,
     song_title TEXT,
     artist_name TEXT,
     duration INT,
-    PRIMARY KEY (username, song_id, artist_id)
+    PRIMARY KEY (artist_id, username, song_id)
 );
 ```
 
@@ -238,8 +238,15 @@ NAME                TYPE       CLUSTER-IP       EXTERNAL-IP   PORT(S)          A
 catalogue-service   NodePort   10.103.250.110   <none>        4567:30355/TCP   5m24s
 ```
 
-Read the `PORT(S)` and go to the mapped port, e.g. `http://localhost:30355`.
+Read the `PORT(S)` and go to the mapped port, e.g. `http://localhost:30355`. You'll see analytics per each user
 
-1. dashboard
-2. k8s cronjob every 5m
+## Handouts to Artists
 
+Go to `outpay` and set up the "payment" process:
+
+```bash
+docker buld -t outpay:latest .
+kubectl apply -f 00-cron.yml
+```
+
+Now you have a cron job running every 5 seconds calculating the playtime seconds for each artist

@@ -53,7 +53,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: coprophage-song-events
+      app: coprophage-song-likes
   template:
     metadata:
       labels:

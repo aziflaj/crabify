@@ -9,25 +9,34 @@ function getMostLiked() {
   fetch('/playtime').
     then((response) => response.json()).
     then(data => {
-      return data.map((d) => ({
-        ...d,
-        playtime: {
-          hrs: Math.floor(d.total_time / 3600),
-          mins: Math.floor(d.total_time / 60) % 60,
-          secs: Math.floor(d.total_time % 60)
+      const result = {}
+
+      for (let [key, val] of Object.entries(data)) {
+        const total_playtime = val.reduce((acc, cur) => acc += cur.total_time, 0)
+        result[key] = {
+          total_playtime,
+          artists: val.map(({ artist_name, total_time }) => ({ artist_name, total_time }))
         }
-      }))
+      }
+
+      return result
     }).
     then((results) => {
-      return results.map(r => `
-        <div class="card">
-          <strong>${r.username}</strong>
-          has played for ${r.playtime.hrs}h ${r.playtime.mins}m ${r.playtime.secs}s
-        </div>
-      `)
-    }).
-    then((displayableStrings) => {
-      playtimeDiv.innerHTML = displayableStrings.join('')
-    })
+      let html = ""
+      for (let [username, data] of Object.entries(results)) {
+        playtimeDiv.innerHTML += `
+          <div class="card">
+            <strong>${username}</strong> has played for ${formatTime(data.total_playtime)}
+          </div>
+        `
+      }
+    });
 }
 
+function formatTime(seconds) {
+  const hrs = Math.floor(seconds / 3600)
+  const mins = Math.floor(seconds/ 60) % 60
+  const secs = Math.floor(seconds % 60)
+
+  return `${hrs}h ${mins}m ${secs}s`
+}

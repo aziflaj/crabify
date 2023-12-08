@@ -11,7 +11,7 @@ get "/" do
 end
 
 get "/playtime" do
-  json calculate_playtime.to_a
+  json calculate_playtime.to_a.group_by { |row| row["username"] }
 end
 
 not_found do
@@ -20,9 +20,9 @@ end
 
 def calculate_playtime
   query = <<~CQL
-    SELECT username, sum(duration) AS total_time
+    SELECT username, artist_name, sum(duration) AS total_time
     FROM playtime
-    GROUP BY username;
+    GROUP BY artist_id, username;
   CQL
 
   cassandra_client.execute(query)
