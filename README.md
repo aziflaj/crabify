@@ -1,5 +1,8 @@
 # Crabify
-_- Because crapify is too obvious_
+
+_You either die Spotify, or you go through [carcinisation]([url](https://en.wikipedia.org/wiki/Carcinisation)) and become Crabify <sub>calling it crapify would be too on the nose</sub>_
+
+\- Alan Turing, probably
 
 > Disclaimer: The sole purpose of this repo is to be used in a **D**ata **E**ngineering and **A**rchitecture **D**emo - _DEAD_ - and should only be regarded as a Proof of Concept. The lack of replication here is on purpose, and the missing parts are left out as an exercise for the reader to add them.
 
